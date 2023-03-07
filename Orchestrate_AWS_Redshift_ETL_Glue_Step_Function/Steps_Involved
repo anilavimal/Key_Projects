@@ -1,0 +1,61 @@
+Steps:
+	Create VPC and subnets
+	Create IAM role for Glue,Redshift and StepFunction .Attach policy to it.
+
+Redshift:
+	Create Redshift Cluster 
+	Choose DB name as “reviews”
+	Connect to Database->Create New Connection->Store the secret in
+	Secrets Manager->key in your cluster details->Give a name for the secret
+	Check the secrets manager for redshift secret. Use this secret as “db_creds” parameter in glue job
+
+S3:
+	Create S3 bucket for holding input scripts.
+	Create 2 folders inside it :python, sql
+	Upload files: rs_query.py, reviewsschema.sql, topreviews.sql, etl.sql
+	Create another bucket to hold output
+
+Glue:
+
+	Create a job and select rs_query.py as source file
+	Fill job parameter as:
+	File: reviewsschema.sql
+	db_creds : Use the secret we created in Redshift
+	DB : reviews ( as mentioned in Redshift)
+	Bucket: Bucket which we created for storing input scripts
+
+SNS:
+	Create topic
+	Copy ARN of topic.
+	Create subscription using EMAIL
+	Accept the subscription
+
+Step Function:
+	Create State machine
+	Copy and paste json code
+	Update SNS topic ARN
+	Attach step function role
+
+Quicksight:
+	Choose same region as S3 bucket
+	Select service S3 (because input file for Quicksight is in S3)
+	Choose bucket: Output bucket we created (this is source for Quicksight)
+	Import Dataset:  Dataset->New Dataset->Create dataset ->S3
+	Data source name:
+	Upload manifest file: Select Json file. (URI: Mentioned complete path of input data file)
+	Edit column names if needed.
+	Analysis ->Create new Analysis ->Choose dataset -Schedule Refresh ->Repeats: Daily
+
+1.Which product has more reviews
+	Create donut chart:
+	Group: product category
+	Value: No of reviews
+
+
+2. Star rating of each and every product category
+	Use Horizontal bar chart
+	Group: product category
+	Value: Average Rating
+	Y axis: Product Name
+
+3.Using AutoGraph
