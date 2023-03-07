@@ -1,0 +1,34 @@
+
+Orchestrate using AWS Glue and Step Functions
+---------------------------------------------------------------------------------
+	Step Function triggers Glue jobs containing tasks- Task1, Task2
+	Created internal and external table in Redshift
+
+Glue job does the following Tasks:
+----------------------------------
+
+	Task1:
+o	Obtaining database connection information from AWS Secrets Manager to connect to the Amazon Redshift cluster 
+o	The Redshift cluster using Amazon Redshift Spectrum, 
+o	Read the external table (Read data from S3. For external table data resides in S3)
+o	Apply Filter
+o	Load filtered data in Redshift internal managed table
+
+	Task 2:
+o	To create Quicksight report out of reviews:
+o	Select only te useful columns Redshift internal table .The cluster executes an aggregation query (AVG(star_rating) as average_stars) to choose useful reviews 
+on Redshift internal table.
+o	Exports the results to another Amazon S3  location via UNLOAD.
+
+	SNS used as notification system in step functions and in the case of pipeline failure SNS send EMAIL notification.
+
+
+Visualization using Quicksight
+-------------------------------
+
+Quicksight input dataset will be S3 output location from Task2
+
+=================================================================
+Data set used for this Project:  Amazon Customer Reviews
+
+
