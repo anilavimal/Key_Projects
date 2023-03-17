@@ -1,0 +1,893 @@
+-- HIVE ANALYTICS
+
+
+AGGREGATE FUNCTIONS
+
+---------------
+GROUP BY
+----------------
+
+ 
+To Find total number of customers.
+------------------------------------- 
+. select count(*) num_of_occurence from customer_demo
+
+To Find total number of male and female customers.
+---------------------------------------------------
+
+. select gender, count(1) num_of_occurence from customer_demo
+group by gender
+
+To Find total number of male and female customers based on maritalstatus
+-------------------------------------------------------------------------
+
+. Hive > Select maritalstatus ,gender,count(*) from customer_demo group by maritalstatus,gender;
+
+OK
+M	F	85
+M	M	89
+S	F	76
+S	M	50
+Time taken: 1.325 seconds, Fetched: 4 row(s)
+hive>
+
+To Find total number of male and female customers based on yearly income
+-------------------------------------------------------------------------
+
+select gender, yearlyincome, count(*) num_of_occurence from customer_demo
+group by gender, yearlyincome;
+
+
+Total MapReduce CPU Time Spent: 0 msec
+OK
+F	0-25000	7
+M	0-25000	5
+F	25001-50000	39
+M	25001-50000	37
+F	50001-75000	59
+M	50001-75000	54
+F	75001-100000	30
+M	75001-100000	26
+F	greater than 100000	26
+M	greater than 100000	17
+
+
+
+To Find total number of male and female customers based on maritalstatus , yearly income
+-----------------------------------------------------------------------------------------
+
+hive> select maritalstatus,gender, yearlyincome, count(*) num_of_occurence from customer_demo group by maritalstatus,gender, yearlyincome;
+
+OK
+M	F	0-25000	6
+M	M	0-25000	4
+M	F	25001-50000	19
+M	M	25001-50000	18
+M	F	50001-75000	27
+M	M	50001-75000	38
+M	F	75001-100000	15
+M	M	75001-100000	16
+M	F	greater than 100000	18
+M	M	greater than 100000	13
+S	F	0-25000	1
+S	M	0-25000	1
+S	F	25001-50000	20
+S	M	25001-50000	19
+S	F	50001-75000	32
+S	M	50001-75000	16
+S	F	75001-100000	15
+S	M	75001-100000	10
+S	F	greater than 100000	8
+S	M	greater than 100000	4
+Time taken: 1.315 seconds, Fetched: 20 row(s)
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+=========================
+-- GROUPING SETS
+=========================
+
+-- Helps to understand and evolving data in different angles
+-- Answering Two different questions using one query
+-- We can see the same data in two different dimensions
+-- () - means everything
+
+
+-- In the blow query grouping is done into result sets respectively.
+-- 1. global dimensions
+-- 2. column level grouping based on yearly income
+-- 3. column level grouping based on status and gender
+
+select maritalstatus, gender, yearlyincome,count(1) num_of_occurence from customer_demo
+group by maritalstatus, gender, yearlyincome
+grouping sets ((maritalstatus, gender), yearlyincome,())
+------------------------------------------------------------------------------------------
+OK
+NULL	NULL	NULL	300
+NULL	NULL	0-25000	12
+NULL	NULL	25001-50000	76
+NULL	NULL	50001-75000	113
+NULL	NULL	75001-100000	56
+NULL	NULL	greater than 100000	43
+M	F	NULL	85
+M	M	NULL	89
+S	F	NULL	76
+S	M	NULL	50
+Time taken: 1.327 seconds, Fetched: 10 row(s)
+hive>
+
+
+
+addding education to the above query
+-----------------------------------------------
+select maritalstatus, gender, yearlyincome, education, count(1) num_of_occurence from customer_demo
+group by maritalstatus, gender, yearlyincome, education
+grouping sets ((maritalstatus, gender), (yearlyincome, education),())
+
+hive> 
+    > 
+    > 
+    > select maritalstatus, gender, yearlyincome, education, count(1) num_of_occurence from customer_demo
+    > group by maritalstatus, gender, yearlyincome, education
+    > grouping sets ((maritalstatus, gender), (yearlyincome, education),());
+
+OK
+NULL	NULL	NULL	NULL	300
+NULL	NULL	0-25000	High School	7
+NULL	NULL	0-25000	Partial High School	5
+NULL	NULL	25001-50000	Bachelors 	5
+NULL	NULL	25001-50000	Graduate Degree	2
+NULL	NULL	25001-50000	High School	37
+NULL	NULL	25001-50000	Partial College	26
+NULL	NULL	25001-50000	Partial High School	6
+NULL	NULL	50001-75000	Bachelors 	38
+NULL	NULL	50001-75000	Graduate Degree	13
+NULL	NULL	50001-75000	High School	10
+NULL	NULL	50001-75000	Partial College	52
+NULL	NULL	75001-100000	Bachelors 	20
+NULL	NULL	75001-100000	Graduate Degree	4
+NULL	NULL	75001-100000	High School	8
+NULL	NULL	75001-100000	Partial College	22
+NULL	NULL	75001-100000	Partial High School	2
+NULL	NULL	greater than 100000	Bachelors 	14
+NULL	NULL	greater than 100000	Graduate Degree	16
+NULL	NULL	greater than 100000	High School	3
+NULL	NULL	greater than 100000	Partial College	10
+M	F	NULL	NULL	85
+M	M	NULL	NULL	89
+S	F	NULL	NULL	76
+S	M	NULL	NULL	50
+Time taken: 1.313 seconds, Fetched: 25 row(s)
+
+
+Using 'groupID' keyword
+------------------------
+select grouping__id,maritalstatus, gender, yearlyincome, education, count(1) num_of_occurence from customer_demo
+group by maritalstatus, gender, yearlyincome, education
+grouping sets ((maritalstatus, gender), (yearlyincome, education),())
+order by grouping__id;
+
+Finding 'total year to date sales' based on customer demographics
+-----------------------------------------------------------------------------------------
+select grouping__id,maritalstatus, gender, yearlyincome, education,sum(totalpurchaseytd) total_purchase_ytd from customer_demo
+group by maritalstatus, gender, yearlyincome, education
+grouping sets ((maritalstatus, gender), (yearlyincome, education),())
+
+3	S	M	NULL	NULL	50
+3	M	F	NULL	NULL	85
+3	S	F	NULL	NULL	76
+3	M	M	NULL	NULL	89
+12	NULL	NULL	75001-100000	Bachelors 	20
+12	NULL	NULL	greater than 100000	Partial College	10
+12	NULL	NULL	greater than 100000	High School	3
+12	NULL	NULL	greater than 100000	Graduate Degree	16
+12	NULL	NULL	greater than 100000	Bachelors 	14
+12	NULL	NULL	75001-100000	Partial High School	2
+12	NULL	NULL	75001-100000	Partial College	22
+12	NULL	NULL	75001-100000	High School	8
+12	NULL	NULL	75001-100000	Graduate Degree	4
+12	NULL	NULL	50001-75000	Partial College	52
+12	NULL	NULL	50001-75000	High School	10
+12	NULL	NULL	50001-75000	Graduate Degree	13
+12	NULL	NULL	50001-75000	Bachelors 	38
+12	NULL	NULL	25001-50000	Partial High School	6
+12	NULL	NULL	25001-50000	Partial College	26
+12	NULL	NULL	25001-50000	High School	37
+12	NULL	NULL	25001-50000	Graduate Degree	2
+12	NULL	NULL	25001-50000	Bachelors 	5
+12	NULL	NULL	0-25000	Partial High School	5
+12	NULL	NULL	0-25000	High School	7
+15	NULL	NULL	NULL	NULL	300
+Time taken: 2.542 seconds, Fetched: 25 row(s)
+
+
+creating all possible grouping sets manually
+------------------------------------------------
+select grouping__id, maritalstatus, gender, yearlyincome, education, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by maritalstatus, gender, yearlyincome, education
+grouping sets ((maritalstatus, gender, yearlyincome, education), (maritalstatus, gender, yearlyincome), (maritalstatus, gender), maritalstatus, ())
+
+==============================================
+-- ROLL-UP - one step up and all probablities
+===============================================
+
+select grouping__id, yearlyincome, education, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education
+with rollup
+
+OK
+3	NULL	NULL	993918.58
+1	0-25000	NULL	74761.34
+0	0-25000	High School	42309.28
+0	0-25000	Partial High School	32452.06
+1	25001-50000	NULL	185787.66
+0	25001-50000	Bachelors 	8715.34
+0	25001-50000	Graduate Degree	11785.77
+0	25001-50000	High School	62984.57
+0	25001-50000	Partial College	96244.05
+0	25001-50000	Partial High School	6057.93
+1	50001-75000	NULL	318655.79
+0	50001-75000	Bachelors 	158100.32
+0	50001-75000	Graduate Degree	49485.27
+0	50001-75000	High School	8576.94
+0	50001-75000	Partial College	102493.26
+1	75001-100000	NULL	228258.45
+0	75001-100000	Bachelors 	55603.34
+0	75001-100000	Graduate Degree	20965.55
+0	75001-100000	High School	49083.29
+0	75001-100000	Partial College	93469.41
+0	75001-100000	Partial High School	9136.86
+1	greater than 100000	NULL	186455.34
+0	greater than 100000	Bachelors 	55392.61
+0	greater than 100000	Graduate Degree	40419.30
+0	greater than 100000	High School	28271.93
+0	greater than 100000	Partial College	62371.50
+
+the above rollup is equivalent to the below grouping set
+-----------------------------------------------------------
+select grouping__id, yearlyincome, education, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education
+grouping sets ((yearlyincome, education), (yearlyincome), ())
+
+
+
+select grouping__id, yearlyincome, education, gender, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education,gender
+with rollup
+----------------------------------------------------------------------------------------------------------------------------
+OK
+7	NULL	NULL	NULL	993918.58
+3	0-25000	NULL	NULL	74761.34
+1	0-25000	High School	NULL	42309.28
+0	0-25000	High School	F	25929.79
+0	0-25000	High School	M	16379.49
+1	0-25000	Partial High School	NULL	32452.06
+0	0-25000	Partial High School	F	19359.96
+0	0-25000	Partial High School	M	13092.10
+3	25001-50000	NULL	NULL	185787.66
+1	25001-50000	Bachelors 	NULL	8715.34
+0	25001-50000	Bachelors 	F	8355.42
+0	25001-50000	Bachelors 	M	359.92
+1	25001-50000	Graduate Degree	NULL	11785.77
+0	25001-50000	Graduate Degree	F	5897.53
+0	25001-50000	Graduate Degree	M	5888.24
+1	25001-50000	High School	NULL	62984.57
+0	25001-50000	High School	F	32142.53
+0	25001-50000	High School	M	30842.04
+1	25001-50000	Partial College	NULL	96244.05
+0	25001-50000	Partial College	F	40797.27
+0	25001-50000	Partial College	M	55446.78
+1	25001-50000	Partial High School	NULL	6057.93
+0	25001-50000	Partial High School	F	3682.97
+0	25001-50000	Partial High School	M	2374.96
+3	50001-75000	NULL	NULL	318655.79
+1	50001-75000	Bachelors 	NULL	158100.32
+0	50001-75000	Bachelors 	F	74716.41
+0	50001-75000	Bachelors 	M	83383.91
+1	50001-75000	Graduate Degree	NULL	49485.27
+0	50001-75000	Graduate Degree	F	8357.31
+0	50001-75000	Graduate Degree	M	41127.96
+1	50001-75000	High School	NULL	8576.94
+0	50001-75000	High School	F	8251.41
+0	50001-75000	High School	M	325.53
+1	50001-75000	Partial College	NULL	102493.26
+0	50001-75000	Partial College	F	62372.75
+0	50001-75000	Partial College	M	40120.51
+3	75001-100000	NULL	NULL	228258.45
+1	75001-100000	Bachelors 	NULL	55603.34
+0	75001-100000	Bachelors 	F	32809.20
+0	75001-100000	Bachelors 	M	22794.14
+1	75001-100000	Graduate Degree	NULL	20965.55
+0	75001-100000	Graduate Degree	F	14135.23
+0	75001-100000	Graduate Degree	M	6830.32
+1	75001-100000	High School	NULL	49083.29
+0	75001-100000	High School	F	32758.70
+0	75001-100000	High School	M	16324.59
+1	75001-100000	Partial College	NULL	93469.41
+0	75001-100000	Partial College	F	34417.86
+0	75001-100000	Partial College	M	59051.55
+1	75001-100000	Partial High School	NULL	9136.86
+0	75001-100000	Partial High School	F	6058.25
+0	75001-100000	Partial High School	M	3078.61
+3	greater than 100000	NULL	NULL	186455.34
+1	greater than 100000	Bachelors 	NULL	55392.61
+0	greater than 100000	Bachelors 	F	44781.66
+0	greater than 100000	Bachelors 	M	10610.95
+1	greater than 100000	Graduate Degree	NULL	40419.30
+0	greater than 100000	Graduate Degree	F	19902.29
+0	greater than 100000	Graduate Degree	M	20517.01
+1	greater than 100000	High School	NULL	28271.93
+0	greater than 100000	High School	F	17691.58
+0	greater than 100000	High School	M	10580.35
+1	greater than 100000	Partial College	NULL	62371.50
+0	greater than 100000	Partial College	F	39283.81
+0	greater than 100000	Partial College	M	23087.69
+Time taken: 1.307 seconds, Fetched: 66 row(s)
+
+
+select grouping__id, yearlyincome, education, gender,sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education,gender
+grouping sets ((yearlyincome, education,gender), (yearlyincome, education), (yearlyincome), ())
+order by grouping__id;
+
+=======================================================
+-- CUBE
+-- permutation and combination of all of them
+-- we may miss out a combination in that cube comes in to picture
+=========================================================
+
+select grouping__id, yearlyincome, education, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education
+with cube
+
+OK
+3	NULL	NULL	993918.58
+2	NULL	Bachelors 	277811.61
+2	NULL	Graduate Degree	122655.89
+2	NULL	High School	191226.01
+2	NULL	Partial College	354578.22
+2	NULL	Partial High School	47646.85
+1	0-25000	NULL	74761.34
+0	0-25000	High School	42309.28
+0	0-25000	Partial High School	32452.06
+1	25001-50000	NULL	185787.66
+0	25001-50000	Bachelors 	8715.34
+0	25001-50000	Graduate Degree	11785.77
+0	25001-50000	High School	62984.57
+0	25001-50000	Partial College	96244.05
+0	25001-50000	Partial High School	6057.93
+1	50001-75000	NULL	318655.79
+0	50001-75000	Bachelors 	158100.32
+0	50001-75000	Graduate Degree	49485.27
+0	50001-75000	High School	8576.94
+0	50001-75000	Partial College	102493.26
+1	75001-100000	NULL	228258.45
+0	75001-100000	Bachelors 	55603.34
+0	75001-100000	Graduate Degree	20965.55
+0	75001-100000	High School	49083.29
+0	75001-100000	Partial College	93469.41
+0	75001-100000	Partial High School	9136.86
+1	greater than 100000	NULL	186455.34
+0	greater than 100000	Bachelors 	55392.61
+0	greater than 100000	Graduate Degree	40419.30
+0	greater than 100000	High School	28271.93
+0	greater than 100000	Partial College	62371.50
+Time taken: 1.298 seconds, Fetched: 31 row(s)
+
+the above cube is equivalent to below grouping sets
+-------------------------------------------------------
+select grouping__id, yearlyincome, education, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education
+grouping sets ((yearlyincome, education), (yearlyincome), (education), ())
+order by grouping__id;
+
+
+select grouping__id, yearlyincome, education, maritalstatus, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education, maritalstatus
+with cube
+-----------------------------------------------------------------------------------------------------------------------
+OK
+7	NULL	NULL	NULL	993918.58
+6	NULL	NULL	M	523009.70
+6	NULL	NULL	S	470908.88
+5	NULL	Bachelors 	NULL	277811.61
+4	NULL	Bachelors 	M	101129.46
+4	NULL	Bachelors 	S	176682.15
+5	NULL	Graduate Degree	NULL	122655.89
+4	NULL	Graduate Degree	M	80144.40
+4	NULL	Graduate Degree	S	42511.49
+5	NULL	High School	NULL	191226.01
+4	NULL	High School	M	100471.24
+4	NULL	High School	S	90754.77
+5	NULL	Partial College	NULL	354578.22
+4	NULL	Partial College	M	207657.02
+4	NULL	Partial College	S	146921.20
+5	NULL	Partial High School	NULL	47646.85
+4	NULL	Partial High School	M	33607.58
+4	NULL	Partial High School	S	14039.27
+3	0-25000	NULL	NULL	74761.34
+2	0-25000	NULL	M	63415.20
+2	0-25000	NULL	S	11346.14
+1	0-25000	High School	NULL	42309.28
+0	0-25000	High School	M	30963.14
+0	0-25000	High School	S	11346.14
+1	0-25000	Partial High School	NULL	32452.06
+0	0-25000	Partial High School	M	32452.06
+3	25001-50000	NULL	NULL	185787.66
+2	25001-50000	NULL	M	98136.80
+2	25001-50000	NULL	S	87650.86
+1	25001-50000	Bachelors 	NULL	8715.34
+0	25001-50000	Bachelors 	M	167.50
+0	25001-50000	Bachelors 	S	8547.84
+1	25001-50000	Graduate Degree	NULL	11785.77
+0	25001-50000	Graduate Degree	M	5888.24
+0	25001-50000	Graduate Degree	S	5897.53
+1	25001-50000	High School	NULL	62984.57
+0	25001-50000	High School	M	32884.92
+0	25001-50000	High School	S	30099.65
+1	25001-50000	Partial College	NULL	96244.05
+0	25001-50000	Partial College	M	58040.62
+0	25001-50000	Partial College	S	38203.43
+1	25001-50000	Partial High School	NULL	6057.93
+0	25001-50000	Partial High School	M	1155.52
+0	25001-50000	Partial High School	S	4902.41
+3	50001-75000	NULL	NULL	318655.79
+2	50001-75000	NULL	M	135757.88
+2	50001-75000	NULL	S	182897.91
+1	50001-75000	Bachelors 	NULL	158100.32
+0	50001-75000	Bachelors 	M	51750.46
+0	50001-75000	Bachelors 	S	106349.86
+1	50001-75000	Graduate Degree	NULL	49485.27
+0	50001-75000	Graduate Degree	M	29505.50
+0	50001-75000	Graduate Degree	S	19979.77
+1	50001-75000	High School	NULL	8576.94
+0	50001-75000	High School	M	185.70
+0	50001-75000	High School	S	8391.24
+1	50001-75000	Partial College	NULL	102493.26
+0	50001-75000	Partial College	M	54316.22
+0	50001-75000	Partial College	S	48177.04
+3	75001-100000	NULL	NULL	228258.45
+2	75001-100000	NULL	M	105357.40
+2	75001-100000	NULL	S	122901.05
+1	75001-100000	Bachelors 	NULL	55603.34
+0	75001-100000	Bachelors 	M	30998.22
+0	75001-100000	Bachelors 	S	24605.12
+1	75001-100000	Graduate Degree	NULL	20965.55
+0	75001-100000	Graduate Degree	M	14279.99
+0	75001-100000	Graduate Degree	S	6685.56
+1	75001-100000	High School	NULL	49083.29
+0	75001-100000	High School	M	8165.55
+0	75001-100000	High School	S	40917.74
+1	75001-100000	Partial College	NULL	93469.41
+0	75001-100000	Partial College	M	51913.64
+0	75001-100000	Partial College	S	41555.77
+1	75001-100000	Partial High School	NULL	9136.86
+0	75001-100000	Partial High School	S	9136.86
+3	greater than 100000	NULL	NULL	186455.34
+2	greater than 100000	NULL	M	120342.42
+2	greater than 100000	NULL	S	66112.92
+1	greater than 100000	Bachelors 	NULL	55392.61
+0	greater than 100000	Bachelors 	M	18213.28
+0	greater than 100000	Bachelors 	S	37179.33
+1	greater than 100000	Graduate Degree	NULL	40419.30
+0	greater than 100000	Graduate Degree	M	30470.67
+0	greater than 100000	Graduate Degree	S	9948.63
+1	greater than 100000	High School	NULL	28271.93
+0	greater than 100000	High School	M	28271.93
+1	greater than 100000	Partial College	NULL	62371.50
+0	greater than 100000	Partial College	M	43386.54
+0	greater than 100000	Partial College	S	18984.96
+Time taken: 1.297 seconds, Fetched: 90 row(s)
+
+
+-- the above cube is equivalent to below grouping sets
+select grouping__id, yearlyincome, education, maritalstatus, sum(totalpurchaseytd) num_of_occurence from customer_demo
+group by yearlyincome, education, maritalstatus
+grouping sets ((yearlyincome, education, maritalstatus), 
+(yearlyincome, education), (yearlyincome, maritalstatus), (education, maritalstatus), 
+(yearlyincome), (education), (maritalstatus), ())
+
+===========================
+HIVE - Analytic function
+===========================
+
+RANK
+ROW_NUMBER
+DENSE_RANK
+CUME_DIST
+PERCENT_RANK
+NTILE
+
+-- ROW_NUMBER
+-- 'cte' stands for common table expression
+-- get nine records from credit each card type
+-- to display first 9 rows in each card type
+-- even though its one query we considered as four dataset
+-- we did this in one pass(1 MR job)
+
+
+with cte as (select row_number() over (partition by cardtype) as serial_no, creditcardid, cardnumber,cardtype from creditcard)
+select * from cte where serial_no < 10;
+
+-- create a sample of the creditcard table that contains an equal amount of all cardtype(in this case 50 records for each card type)
+create table cc_sample as 
+select * from 
+(select row_number() over (partition by cardtype) as serial_no, creditcardid, cardnumber, cardtype from creditcard) v where v.serial_no < 51
+
+hive> select * from cc_sample LIMIT 3;
+OK
+1	11152	77774696004583	ColonialVoice
+2	11083	77772227137503	ColonialVoice
+3	11150	77775658326712	ColonialVoice
+--------
+-- NTILE
+--------
+-- NTILE is used to split data evenly, avoid biased data, in order to split partition by -- keyword is used.
+
+select ntile(5) over (partition by cardtype) as groups, creditcardid, cardnumber, cardtype from cc_sample
+order by groups;
+
+OK
+1	11051	11113999455987	Vista
+1	11052	11115587436820	Vista
+1	11053	11116213225151	Vista
+1	11129	11113693444009	Vista
+1	11242	11116181059704	Vista
+1	11056	11111149668245	Vista
+1	11274	11117886883007	Vista
+1	11008	11117967247104	Vista
+1	11059	11117357823853	Vista
+1	11124	11113781157793	Vista
+1	11162	33337231473742	SuperiorCard
+1	11167	33332426513648	SuperiorCard
+1	11300	33335116256037	SuperiorCard
+1	11135	33334267986388	SuperiorCard
+1	11144	33332055617789	SuperiorCard
+1	11147	33333511874948	SuperiorCard
+1	11149	33339506236322	SuperiorCard
+1	11153	33339228609819	SuperiorCard
+1	11155	33337545132730	SuperiorCard
+1	11159	33336690915763	SuperiorCard
+1	11206	55553657837954	Distinguish
+1	11207	55558552276091	Distinguish
+1	11269	55556421849045	Distinguish
+1	11209	55554416818515	Distinguish
+1	11211	55553092376054	Distinguish
+1	11213	55552461014685	Distinguish
+1	11214	55556693392969	Distinguish
+1	11270	55553983910057	Distinguish
+1	11218	55559869583126	Distinguish
+1	11019	55558730050488	Distinguish
+1	11217	77776409996829	ColonialVoice
+1	11145	77773763104835	ColonialVoice
+1	11130	77775572554034	ColonialVoice
+1	11220	77778851097560	ColonialVoice
+1	4	77774915718248	ColonialVoice
+1	11017	77773392398640	ColonialVoice
+1	11001	77778545396383	ColonialVoice
+1	11150	77775658326712	ColonialVoice
+1	11083	77772227137503	ColonialVoice
+1	11152	77774696004583	ColonialVoice
+2	11049	11117031705957	Vista
+2	11099	77777079018850	ColonialVoice
+2	11100	77779655972973	ColonialVoice
+2	11101	77778009083349	ColonialVoice
+2	11210	77772426667475	ColonialVoice
+2	11005	77776365904678	ColonialVoice
+2	11212	77773020940188	ColonialVoice
+2	11252	77776082244508	ColonialVoice
+2	11104	77776963301388	ColonialVoice
+2	11128	77778868574825	ColonialVoice
+2	11216	77776023764481	ColonialVoice
+2	11139	11116368037873	Vista
+2	11208	33332912037833	SuperiorCard
+2	11205	33337078358626	SuperiorCard
+2	11202	33333939408376	SuperiorCard
+2	11190	33334061135890	SuperiorCard
+2	11188	33335206144011	SuperiorCard
+2	11185	33338607791822	SuperiorCard
+2	11179	33339083187133	SuperiorCard
+2	11173	33332823712986	SuperiorCard
+2	11172	33333692522675	SuperiorCard
+2	11168	33335037929930	SuperiorCard
+2	11236	55551821572173	Distinguish
+2	11234	55557088905505	Distinguish
+2	11291	55554907141936	Distinguish
+2	11275	55551237811475	Distinguish
+2	7	55553635401028	Distinguish
+2	11227	55551913239090	Distinguish
+2	11015	55559756765668	Distinguish
+2	11016	55556641564568	Distinguish
+2	11272	55554696860753	Distinguish
+2	11223	55558087259099	Distinguish
+2	11041	11117631114440	Vista
+2	11160	11117461689965	Vista
+2	11043	11116845277073	Vista
+2	11246	11115811841189	Vista
+2	11151	11112345615000	Vista
+2	11046	11115686906856	Vista
+2	11148	11113588289017	Vista
+2	11143	11118531661452	Vista
+3	11215	33332433344429	SuperiorCard
+3	11040	11118999547346	Vista
+3	11086	77778981134479	ColonialVoice
+3	11137	77779918429055	ColonialVoice
+3	11279	77776438429377	ColonialVoice
+3	11048	77776096112954	ColonialVoice
+3	11203	77778484453049	ColonialVoice
+3	11298	77774394266115	ColonialVoice
+3	11243	77774161819891	ColonialVoice
+3	11060	77772834002657	ColonialVoice
+3	11084	77774340795615	ColonialVoice
+3	11092	77774476989988	ColonialVoice
+3	11031	11112295163988	Vista
+3	11249	11118909006259	Vista
+3	11174	11116249478550	Vista
+3	11170	11114997732854	Vista
+3	11166	11111451664173	Vista
+3	11165	11119384701489	Vista
+3	11161	11119516516354	Vista
+3	5	11114404600042	Vista
+3	11285	11112589609861	Vista
+3	11103	55556387327785	Distinguish
+3	11245	55553488146259	Distinguish
+3	11096	55559510684025	Distinguish
+3	11006	55552716719661	Distinguish
+3	11089	55556639396538	Distinguish
+3	11241	55555795554490	Distinguish
+3	11293	55555477865939	Distinguish
+3	2	55552127249722	Distinguish
+3	11009	55552441555230	Distinguish
+3	11237	55551846260199	Distinguish
+3	11244	33338637099906	SuperiorCard
+3	11240	33331501279076	SuperiorCard
+3	11239	33332128486621	SuperiorCard
+3	11233	33339542633890	SuperiorCard
+3	11231	33338408488026	SuperiorCard
+3	11230	33339191609103	SuperiorCard
+3	11228	33337397377036	SuperiorCard
+3	11224	33337413251201	SuperiorCard
+3	11221	33337296798339	SuperiorCard
+4	11268	33339959359123	SuperiorCard
+4	11146	77772295598915	ColonialVoice
+4	11121	77771206687544	ColonialVoice
+4	3	77778344838353	ColonialVoice
+4	11119	77772899490729	ColonialVoice
+4	11265	77776981528093	ColonialVoice
+4	11267	33338974346562	SuperiorCard
+4	11133	77772552323476	ColonialVoice
+4	11262	33335655700751	SuperiorCard
+4	11087	77774710495954	ColonialVoice
+4	11189	11119375695767	Vista
+4	11201	11114679438822	Vista
+4	11257	33338692332901	SuperiorCard
+4	11256	33339582933225	SuperiorCard
+4	11253	33335200250663	SuperiorCard
+4	11251	33331334862680	SuperiorCard
+4	11250	33336307052955	SuperiorCard
+4	11247	33332963169577	SuperiorCard
+4	11193	77774009985432	ColonialVoice
+4	11123	77772350529873	ColonialVoice
+4	11194	77779141388067	ColonialVoice
+4	11266	11118433915108	Vista
+4	11186	11113575652376	Vista
+4	11294	11116696575210	Vista
+4	11184	11111953404207	Vista
+4	11289	11114460778357	Vista
+4	11176	11118763580458	Vista
+4	11254	11119911177493	Vista
+4	11175	11119523451806	Vista
+4	11271	33339702170532	SuperiorCard
+4	11126	55556836605127	Distinguish
+4	11125	55557735523843	Distinguish
+4	11062	55557629876740	Distinguish
+4	11120	55554457546817	Distinguish
+4	11065	55558411012018	Distinguish
+4	11117	55556342646293	Distinguish
+4	11116	55551268792866	Distinguish
+4	11107	55559637110519	Distinguish
+4	11248	55551670348713	Distinguish
+4	11280	55554205864237	Distinguish
+5	11111	11111908760397	Vista
+5	11108	11116197915772	Vista
+5	11093	11117972084431	Vista
+5	11085	11115764333208	Vista
+5	11091	11111999192730	Vista
+5	11090	11113123403607	Vista
+5	11222	11118049089620	Vista
+5	11018	11114023394559	Vista
+5	11219	11115422131213	Vista
+5	11299	11112973479053	Vista
+5	11292	33337366071176	SuperiorCard
+5	11287	33334960903716	SuperiorCard
+5	11286	33338398486255	SuperiorCard
+5	11284	33334243202357	SuperiorCard
+5	11282	33337450733858	SuperiorCard
+5	11281	33336358727925	SuperiorCard
+5	11278	33331214548917	SuperiorCard
+5	11277	33338397990666	SuperiorCard
+5	11276	33338699798914	SuperiorCard
+5	11273	33332235487895	SuperiorCard
+5	11142	55558345264125	Distinguish
+5	11050	55553621359310	Distinguish
+5	11138	55558701212647	Distinguish
+5	11136	55556342666559	Distinguish
+5	11295	55554736888318	Distinguish
+5	11132	55554906303932	Distinguish
+5	11131	55555104579715	Distinguish
+5	11054	55552257589056	Distinguish
+5	11127	55554405734552	Distinguish
+5	11177	77774604311077	ColonialVoice
+5	11072	77778618125903	ColonialVoice
+5	11263	77773868299679	ColonialVoice
+5	11180	77772249677978	ColonialVoice
+5	11181	77773669834898	ColonialVoice
+5	11182	77772227030261	ColonialVoice
+5	11140	77773196302488	ColonialVoice
+5	11235	77774162217897	ColonialVoice
+5	11264	77776946070686	ColonialVoice
+5	11141	77772557647623	ColonialVoice
+5	11283	55558391145254	Distinguish
+Time taken: 2.514 seconds, Fetched: 200 row(s)
+
+
+-------------------
+-- Windowing Analytics
+-------------------
+-- A window can have 
+---- partition by
+---- Order by
+---- row between
+---- range between
+
+ 
+To find the sales contribution by customers on the overall year to date sales 
+-- belong to categorised by gender, maritial status, yearly income and education.
+
+-- finding sale percentage contributed by each customer
+-----------------------------------------------------------------------------------------------
+select customerid, (sum(totalpurchaseytd)
+over (partition by customerid) / sum(totalpurchaseytd) over ()) percentage from customer_demo cd 
+
+OK
+11300	0.0015097011266
+11299	0.0060520450277
+11298	0.0059584659339
+11297	0.0059846350795
+11296	0.0059336148037
+11295	0.0060953181899
+11294	0.0000425386957
+11293	0.0000857414296
+11292	0.0059463824492
+11291	0.0059091963046
+11290	0.0059695533612
+11289	0.0059416134468
+11288	0.0000777427865
+11287	0.0011742108695
+11286	0.0059906516689
+11285	0.0001285417162
+11284	0.0000558194616
+11283	0.0000448427073
+11282	0.0060354340091
+11281	0.0059574195705
+11280	0.0000777427865
+11279	0.0000448427073
+11278	0.0059444003955
+11277	0.0014437701728
+11276	0.0009943671644
+11275	0.0059916678487
+11274	0.0059242679617
+11273	0.0002749017933
+11272	0.0060117902213
+11271	0.0060097880452
+11270	0.0060208352278
+11269	0.0000425386957
+11268	0.0000988511554
+
+To Find the customerset based on percentage contribution on the total sales (YTD)
+---------------------------------------------------------------------------------------
+select  maritalstatus, yearlyincome, education, 
+   sum(v.percentage) as percentage_of_purchase from customer_demo cd
+   join 
+   (select customerid, (sum(totalpurchaseytd) over (partition by customerid) / sum(totalpurchaseytd) over ()) percentage from customer_demo cd) as v
+   on v.customerid = cd.customerid
+group by maritalstatus, yearlyincome, education
+
+Total MapReduce CPU Time Spent: 0 msec
+OK
+M	0-25000	High School	0.0311525919959
+M	0-25000	Partial High School	0.0326506221465
+M	25001-50000	Bachelors 	0.0001685248705
+M	25001-50000	Graduate Degree	0.0059242679617
+M	25001-50000	High School	0.0330861306565
+M	25001-50000	Partial College	0.0583957490764
+M	25001-50000	Partial High School	0.0011625901993
+M	50001-75000	Bachelors 	0.0520671019149
+M	50001-75000	Graduate Degree	0.0296860332363
+M	50001-75000	High School	0.0001868362297
+M	50001-75000	Partial College	0.0546485608511
+M	75001-100000	Bachelors 	0.0311878866375
+M	75001-100000	Graduate Degree	0.0143673639747
+M	75001-100000	High School	0.0082155119789
+M	75001-100000	Partial College	0.0522312803530
+M	greater than 100000	Bachelors 	0.0183247203206
+M	greater than 100000	Graduate Degree	0.0306571087544
+M	greater than 100000	High School	0.0284449154779
+M	greater than 100000	Partial College	0.0436520061836
+S	0-25000	High School	0.0114155628321
+S	25001-50000	Bachelors 	0.0086001410699
+S	25001-50000	Graduate Degree	0.0059336148037
+S	25001-50000	High School	0.0302838186203
+S	25001-50000	Partial College	0.0384371826513
+S	25001-50000	Partial High School	0.0049324060327
+S	50001-75000	Bachelors 	0.1070005754394
+S	50001-75000	Graduate Degree	0.0201020188194
+S	50001-75000	High School	0.0084425828925
+S	50001-75000	Partial College	0.0484718174803
+S	75001-100000	Bachelors 	0.0247556696242
+S	75001-100000	Graduate Degree	0.0067264664677
+S	75001-100000	High School	0.0411681005099
+S	75001-100000	Partial College	0.0418100343793
+S	75001-100000	Partial High School	0.0091927650653
+S	greater than 100000	Bachelors 	0.0374068165623
+S	greater than 100000	Graduate Degree	0.0100095019856
+S	greater than 100000	Partial College	0.0191011219450
+Time taken: 11.562 seconds, Fetched: 37 row(s)
+
+To find the sales contribution by customers on the overall year to date sales 
+belong to categorised by same maritial status, gender, yearly income
+-----------------------------------------------------------------------------------------------------------
+select  maritalstatus, gender, yearlyincome,
+sum(v.percentage) as percentage_of_purchase from customer_demo cd
+join 
+(select customerid, (sum(totalpurchaseytd) over (partition by customerid) / sum(totalpurchaseytd) over ()) percentage from customer_demo cd) as v
+on v.customerid = cd.customerid
+group by maritalstatus, gender, yearlyincome
+
+OK
+M	F	0-25000	0.0390931820591
+M	M	0-25000	0.0247100320833
+M	F	25001-50000	0.0401771038427
+M	M	25001-50000	0.0585601589217
+M	F	50001-75000	0.0371121747216
+M	M	50001-75000	0.0994763575104
+M	F	75001-100000	0.0494023967235
+M	M	75001-100000	0.0565996462206
+M	F	greater than 100000	0.0785016012076
+M	M	greater than 100000	0.0425771495289
+S	F	0-25000	0.0064736791619
+S	M	0-25000	0.0049418836702
+S	F	25001-50000	0.0512546510601
+S	M	25001-50000	0.0369325121178
+S	F	50001-75000	0.1175261257315
+S	M	50001-75000	0.0664908689001
+S	F	75001-100000	0.0715121755747
+S	M	75001-100000	0.0521408604717
+S	F	greater than 100000	0.0439021272748
+S	M	greater than 100000	0.0226153132181
+Time taken: 11.526 seconds, Fetched: 20 row(s)
+
+To find the sales contribution by customers on the overall year to date sales 
+ belong to categorised by same gender, yearly income.
+--------------------------------------------------------------------------------------
+select  gender, yearlyincome,
+sum(v.percentage) as percentage_of_purchase from customer_demo cd
+
+join 
+(select customerid, (sum(totalpurchaseytd) over (partition by customerid) / sum(totalpurchaseytd) over ()) percentage from customer_demo cd) as v
+on v.customerid = cd.customerid
+group by gender, yearlyincome
+order by gender
+
+Total MapReduce CPU Time Spent: 0 msec
+OK
+F	greater than 100000	0.1224037284824
+F	75001-100000	0.1209145722982
+F	50001-75000	0.1546383004531
+F	25001-50000	0.0914317549028
+F	0-25000	0.0455668612210
+M	greater than 100000	0.0651924627470
+M	75001-100000	0.1087405066923
+M	50001-75000	0.1659672264105
+M	25001-50000	0.0954926710395
+M	0-25000	0.0296519157535
