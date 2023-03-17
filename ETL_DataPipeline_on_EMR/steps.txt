@@ -1,0 +1,35 @@
+ETL Data Pipeline on AWS EMR Cluster
+------------------------------------
+
+1.	Create an Amazon EC2 key pair for SSH- To authenticate and connect to the nodes in a cluster
+2.	Launch EMR cluster
+  a.	ClusterName
+  b.	Application:  Hadoop, hive.  OR Spark Hadoop,Hive
+  c.	No of instance
+  d.	S3 folder
+  e.	Key pair select
+  f.	EMR default role
+3.	Ssh to master node to connect to hive shell
+4.	Create external table(sales_table) on top of S3 where we uploaded csv file
+5.	Create internal final table
+  a.	Partition
+  b.	Stored as ORC
+
+6.	Perform ETL on external table – Used Hive as ETL tool 
+
+7.	Write to final table
+  a.	INSERT OVERWRITE TABLE final_table
+  •	Partition()
+  •	Select 
+  •	Cast (region as string)
+  •	Cast (country as string)
+  •	Coalease from sales_table LIMIT 100
+
+8.	Connect to Tableau 
+  a.	Connector: Amazon EMR Hadoop Hive
+  b.	Server: dns of EMR cluster. (Fully Qualified Name)
+  c.	Schema : default
+9.	Analyze
+  a.	Unit sold per region
+  b.	Type of item-clothes, fruits per region
+  c.	Total revenue ,total profit per region
