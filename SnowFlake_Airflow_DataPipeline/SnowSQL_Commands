@@ -1,0 +1,37 @@
+#Create PIPE FORMAT
+=======================================
+create or replace file format PIPE_FORMAT_CLI
+  type = 'CSV'
+  field_delimiter = '|'
+  skip_header = 1;
+  
+=====================================  
+#Create stage for snowflake
+======================================
+create or replace stage PIPE_STAGE1
+  file_format = PIPE_FORMAT_CLI;
+
+=================================================
+#Put customer_detail csv in stage.
+# Snowflake will load the table from this stage
+===================================================
+put file://C:\Users\anila\Desktop\Data\customer_detail.csv @PIPE_STAGE1 auto_compress=true;
+
+
+=========================================
+#To see how many files are loaded in stage
+=========================================
+list @PIPE_CLI_STAGE;
+
+=====================
+#Resume warehouse.
+=====================
+alter warehouse compute_wh resume;
+
+========================================
+#To load data into table from stage
+=======================================
+copy into customer_detail
+  from @PIPE_STAGE1
+  file_format = (format_name = PIPE_FORMAT_CLI)
+  on_error = 'skip_file';
