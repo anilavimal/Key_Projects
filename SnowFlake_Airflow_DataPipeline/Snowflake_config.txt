@@ -1,0 +1,34 @@
+================
+#Create warehouse
+==================
+
+warehouse="WH1"
+database="DB1",
+schema="SCHEMA1",
+role="DEVELOPER_ROLE1",
+
+======================
+#Customer table schema
+=======================
+
+C_CUSTKEY NUMBER(38,0)
+C_NAME VARCHAR(25)
+C ADDRESS VARCHAR(40)
+C_NATIONKEY NUMBER(38,0)
+C_PHONE VARCHAR(15)
+C_ACCTBAL NUMBER(12,2)
+C_MKTSEGMENT VARCHAR(10)
+C_COMMENT VARCHAR(117)
+
+=======================
+#Order table Schema - 
+=======================
+O_ORDERKEY NUMBER(38,0)
+O_CUSTKEY NUMBER(38,0)
+O_ORDERSTATUS VARCHAR(1)
+O TOTALPRICE NUMBER(12,2)
+O_ORDERDATE DATE
+O_ORDERPRIORITY VARCHAR(15)
+O_CLERK VARCHAR(15)
+O_SHIPPRIORITY NUMBER(38,0)
+O_COMMENT VARCHAR(79)
