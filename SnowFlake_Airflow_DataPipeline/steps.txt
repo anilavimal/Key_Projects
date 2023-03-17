@@ -1,0 +1,86 @@
+
+
+#Steps followed
+===================================
+1.Create storage integration
+2.Create external stage
+
+3.Copy data from stage to snowflake table
+4.WRITE Transformation query
+5.providing access to roles
+6.Create table for transformation data
+7.Transformation query used in DAG
+
+====================================
+1.To create storage integration
+====================================
+
+CREATE or replace STORAGE INTEGRATION S3_INTEGRATION
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::172016975116:role/Developer_Role1'
+  ENABLED = TRUE
+  STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake/firehose/');
+  
+DESC INTEGRATION S3_INTEGRATION;  
+
+===========================================
+2.To create external stage
+===========================================
+
+CREATE OR REPLACE STAGE CUSTOMER_STAGE
+  URL='s3://snowflake/firehose/customers/'
+  STORAGE_INTEGRATION = S3_INTEGRATION
+  FILE_FORMAT=CSV_FORMAT; 
+  
+CREATE OR REPLACE STAGE ORDERS_STAGE
+  URL='s3://snowflake/firehose/orders/'
+  STORAGE_INTEGRATION = S3_INTEGRATION
+  FILE_FORMAT=CSV_FORMAT;   
+
+=====================================================  
+3.Copy command to copy data from stage to snowflake table
+======================================================  
+
+copy into DB1.SCHEMA1.CUSTOMER
+(C_CUSTKEY, C_NAME, C_ADDRESS, C_NATIONKEY, C_PHONE, C_ACCTBAL, C_MKTSEGMENT, C_COMMENT, BATCH_ID) from
+( select t.$1,t.$2,t.$3,t.$4,t.$5,t.$6,t.$7,t.$8,'20211114020201' from @CUSTOMER_STAGE t);  
+
+========================================================
+4.Transformation query
+=======================================================
+
+select c.c_name as customer_name, o.o_orderdate as order_date,sum(o.o_totalprice) as order_total_price from orders_raw o join customer_raw c on o.o_custkey = c.C_custkey
+where o_orderstatus= 'F'
+group by c_name,o_orderdate
+order by o_orderdate;
+
+========================================================
+5.To providing access to roles
+========================================================
+
+grant select on all tables in schema schema1 to developer_role1;
+
+show GRANTS on schema schema1;
+
+use role securityadmin;
+grant MANAGE GRANTS on  to developer_role1;
+use role developer_role1;
+
+==========================================================
+6. Create table for transformed data
+=================================================
+Create table ORDER_CUSTOMER_DATE_PRICE (CUSTOMER_NAME VARCHAR(25), ORDER_DATE DATE, ORDER_TOTAL_PRICE NUMBER(12,2));
+
+
+====================================
+Transformation query used in DAG
+========================================
+insert into ORDER_CUSTOMER_DATE_PRICE (CUSTOMER_NAME, ORDER_DATE, ORDER_TOTAL_PRICE, BATCH_ID) 
+select c.c_name as customer_name, o.o_orderdate as order_date,sum(o.o_totalprice) as order_total_price, c.batch_id
+from orders o join customer c on o.o_custkey = c.C_custkey and o.batch_id = c.batch_id
+where o_orderstatus= 'F'
+group by c_name,o_orderdate, c.batch_id
+order by o_orderdate;
+
+
